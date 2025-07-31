@@ -6,60 +6,152 @@ public class BoardService {
     
     public void displayBoard(Board board) {
         System.out.println("\nCurrent Board:");
-        System.out.println("-------------");
+        int size = board.getSize();
         
-        for (int i = 0; i < board.getSize(); i++) {
+        // Print top border
+        printBorder(size);
+        
+        for (int i = 0; i < size; i++) {
             System.out.print("| ");
-            for (int j = 0; j < board.getSize(); j++) {
-                System.out.print(board.getCell(i, j).getContent() + " | ");
+            for (int j = 0; j < size; j++) {
+                String content = board.getCell(i, j).getContent();
+                // Pad with space for consistent alignment
+                System.out.print(content + " | ");
             }
             System.out.println();
-            if (i < board.getSize() - 1) {
-                System.out.println("-------------");
+            if (i < size - 1) {
+                printBorder(size);
             }
         }
-        System.out.println("-------------");
+        printBorder(size);
+    }
+
+    private void printBorder(int size) {
+        for (int i = 0; i < size; i++) {
+            System.out.print("----");
+        }
+        System.out.println("-");
     }
 
     public boolean isValidMove(Board board, int row, int col) {
-        return row >= 0 && row < board.getSize() && 
-               col >= 0 && col < board.getSize() && 
-               board.isCellEmpty(row, col);
+        int size = board.getSize();
+        
+        // Check if coordinates are within bounds
+        if (row < 0 || row >= size || col < 0 || col >= size) {
+            System.out.println("Invalid coordinates! Row and column must be between 0 and " + (size - 1) + ".");
+            return false;
+        }
+        
+        // Check if cell is already occupied
+        if (!board.isCellEmpty(row, col)) {
+            System.out.println("Cell (" + row + "," + col + ") is already occupied by '" + 
+                             board.getCell(row, col).getContent() + "'! Please choose an empty cell.");
+            return false;
+        }
+        
+        return true;
     }
 
-    public boolean checkWin(Board board, String symbol) {
-        // Check rows
-        for (int i = 0; i < board.getSize(); i++) {
-            if (board.getCell(i, 0).getContent().equals(symbol) &&
-                board.getCell(i, 1).getContent().equals(symbol) &&
-                board.getCell(i, 2).getContent().equals(symbol)) {
-                return true;
+    public boolean checkWin(Board board, String symbol, int lastRow, int lastCol) {
+        int size = board.getSize();
+        
+        // Only check the row, column, and diagonals that include the last move
+        // This reduces time complexity from O(n²) to O(n)
+        
+        // Check row (O(n))
+        boolean rowWin = true;
+        for (int j = 0; j < size; j++) {
+            if (!board.getCell(lastRow, j).getContent().equals(symbol)) {
+                rowWin = false;
+                break;
             }
+        }
+        if (rowWin) return true;
+        
+        // Check column (O(n))
+        boolean colWin = true;
+        for (int i = 0; i < size; i++) {
+            if (!board.getCell(i, lastCol).getContent().equals(symbol)) {
+                colWin = false;
+                break;
+            }
+        }
+        if (colWin) return true;
+        
+        // Check main diagonal (O(n)) - only if the move is on the diagonal
+        if (lastRow == lastCol) {
+            boolean diagWin = true;
+            for (int i = 0; i < size; i++) {
+                if (!board.getCell(i, i).getContent().equals(symbol)) {
+                    diagWin = false;
+                    break;
+                }
+            }
+            if (diagWin) return true;
+        }
+        
+        // Check anti-diagonal (O(n)) - only if the move is on the anti-diagonal
+        if (lastRow + lastCol == size - 1) {
+            boolean antiDiagWin = true;
+            for (int i = 0; i < size; i++) {
+                if (!board.getCell(i, size - 1 - i).getContent().equals(symbol)) {
+                    antiDiagWin = false;
+                    break;
+                }
+            }
+            if (antiDiagWin) return true;
+        }
+        
+        return false;
+    }
+
+    // Legacy method for backward compatibility - checks entire board
+    public boolean checkWin(Board board, String symbol) {
+        int size = board.getSize();
+        
+        // Check rows
+        for (int i = 0; i < size; i++) {
+            boolean rowWin = true;
+            for (int j = 0; j < size; j++) {
+                if (!board.getCell(i, j).getContent().equals(symbol)) {
+                    rowWin = false;
+                    break;
+                }
+            }
+            if (rowWin) return true;
         }
 
         // Check columns
-        for (int j = 0; j < board.getSize(); j++) {
-            if (board.getCell(0, j).getContent().equals(symbol) &&
-                board.getCell(1, j).getContent().equals(symbol) &&
-                board.getCell(2, j).getContent().equals(symbol)) {
-                return true;
+        for (int j = 0; j < size; j++) {
+            boolean colWin = true;
+            for (int i = 0; i < size; i++) {
+                if (!board.getCell(i, j).getContent().equals(symbol)) {
+                    colWin = false;
+                    break;
+                }
+            }
+            if (colWin) return true;
+        }
+
+        // Check main diagonal
+        boolean diagWin = true;
+        for (int i = 0; i < size; i++) {
+            if (!board.getCell(i, i).getContent().equals(symbol)) {
+                diagWin = false;
+                break;
             }
         }
+        if (diagWin) return true;
 
-        // Check diagonals
-        if (board.getCell(0, 0).getContent().equals(symbol) &&
-            board.getCell(1, 1).getContent().equals(symbol) &&
-            board.getCell(2, 2).getContent().equals(symbol)) {
-            return true;
+        // Check anti-diagonal
+        boolean antiDiagWin = true;
+        for (int i = 0; i < size; i++) {
+            if (!board.getCell(i, size - 1 - i).getContent().equals(symbol)) {
+                antiDiagWin = false;
+                break;
+            }
         }
-
-        if (board.getCell(0, 2).getContent().equals(symbol) &&
-            board.getCell(1, 1).getContent().equals(symbol) &&
-            board.getCell(2, 0).getContent().equals(symbol)) {
-            return true;
-        }
-
-        return false;
+        return antiDiagWin;
     }
 
     public void makeMove(Board board, int row, int col, String symbol) {

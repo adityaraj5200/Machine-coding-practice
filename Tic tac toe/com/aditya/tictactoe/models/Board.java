@@ -3,15 +3,18 @@ package com.aditya.tictactoe.models;
 public class Board {
     private Cell[][] cells;
     private GameState gameState;
-    private static final int SIZE = 3;
+    private int size;
+    private int movesCount; // Track total moves for quick draw detection
 
-    public Board() {
-        this.cells = new Cell[SIZE][SIZE];
+    public Board(int size) {
+        this.size = size;
+        this.cells = new Cell[size][size];
         this.gameState = GameState.PLAYING;
+        this.movesCount = 0;
         
         // Initialize all cells
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
                 cells[i][j] = new Cell(i, j);
             }
         }
@@ -23,6 +26,7 @@ public class Board {
 
     public void setCell(int row, int col, String content) {
         cells[row][col].setContent(content);
+        movesCount++;
     }
 
     public GameState getGameState() {
@@ -34,7 +38,7 @@ public class Board {
     }
 
     public int getSize() {
-        return SIZE;
+        return size;
     }
 
     public boolean isCellEmpty(int row, int col) {
@@ -42,13 +46,10 @@ public class Board {
     }
 
     public boolean isBoardFull() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (cells[i][j].isEmpty()) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return movesCount == size * size;
+    }
+
+    public int getMovesCount() {
+        return movesCount;
     }
 } 

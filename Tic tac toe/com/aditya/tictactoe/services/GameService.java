@@ -10,8 +10,8 @@ public class GameService {
     private Player currentPlayer;
     private BoardService boardService;
 
-    public GameService(Player player1, Player player2) {
-        this.board = new Board();
+    public GameService(Player player1, Player player2, int boardSize) {
+        this.board = new Board(boardSize);
         this.player1 = player1;
         this.player2 = player2;
         this.currentPlayer = player1; // Player 1 starts
@@ -19,7 +19,8 @@ public class GameService {
     }
 
     public void startGame() {
-        System.out.println("Starting Tic Tac Toe Game!");
+        int boardSize = board.getSize();
+        System.out.println("Starting Tic Tac Toe Game (" + boardSize + "x" + boardSize + ")!");
         System.out.println(player1.getName() + " (" + player1.getSymbol() + ") vs " + 
                          player2.getName() + " (" + player2.getSymbol() + ")");
         
@@ -29,22 +30,23 @@ public class GameService {
             boardService.displayBoard(board);
             System.out.println("\n" + currentPlayer.getName() + "'s turn (" + currentPlayer.getSymbol() + ")");
             
-            // Get move from player
-            int row = getValidRow(scanner);
-            int col = getValidCol(scanner);
+            // Get valid move from player
+            int[] move = getValidMove(scanner);
+            int row = move[0];
+            int col = move[1];
             
             // Make the move
             boardService.makeMove(board, row, col, currentPlayer.getSymbol());
             
-            // Check for win
-            if (boardService.checkWin(board, currentPlayer.getSymbol())) {
+            // Check for win using optimized method (O(n) instead of O(n²))
+            if (boardService.checkWin(board, currentPlayer.getSymbol(), row, col)) {
                 board.setGameState(GameState.WIN);
                 boardService.displayBoard(board);
                 System.out.println("\n*** " + currentPlayer.getName() + " wins! ***");
                 break;
             }
             
-            // Check for draw
+            // Check for draw (O(1) using movesCount)
             if (board.isBoardFull()) {
                 board.setGameState(GameState.DRAW);
                 boardService.displayBoard(board);
@@ -59,28 +61,43 @@ public class GameService {
         scanner.close();
     }
 
-    private int getValidRow(Scanner scanner) {
-        int row;
+    private int[] getValidMove(Scanner scanner) {
+        int boardSize = board.getSize();
+        int row, col;
+        
         do {
-            System.out.print("Enter row (0-2): ");
-            row = scanner.nextInt();
-            if (row < 0 || row >= board.getSize()) {
-                System.out.println("Invalid row! Please enter 0, 1, or 2.");
+            // Get row
+            do {
+                System.out.print("Enter row (0-" + (boardSize - 1) + "): ");
+                row = scanner.nextInt();
+                if (row < 0 || row >= boardSize) {
+                    System.out.println("Invalid row! Please enter 0 to " + (boardSize - 1) + ".");
+                }
+            } while (row < 0 || row >= boardSize);
+            
+            // Get column
+            do {
+                System.out.print("Enter column (0-" + (boardSize - 1) + "): ");
+                col = scanner.nextInt();
+                if (col < 0 || col >= boardSize) {
+                    System.out.println("Invalid column! Please enter 0 to " + (boardSize - 1) + ".");
+                }
+            } while (col < 0 || col >= boardSize);
+            
+            // Check if cell is already occupied
+            if (!board.isCellEmpty(row, col)) {
+                System.out.println("Cell (" + row + "," + col + ") is already occupied! Please choose an empty cell.");
+                System.out.println("Current board state:");
+                boardService.displayBoard(board);
+                continue; // Ask for new input
             }
-        } while (row < 0 || row >= board.getSize());
-        return row;
-    }
-
-    private int getValidCol(Scanner scanner) {
-        int col;
-        do {
-            System.out.print("Enter column (0-2): ");
-            col = scanner.nextInt();
-            if (col < 0 || col >= board.getSize()) {
-                System.out.println("Invalid column! Please enter 0, 1, or 2.");
-            }
-        } while (col < 0 || col >= board.getSize());
-        return col;
+            
+            // If we reach here, the move is valid
+            break;
+            
+        } while (true);
+        
+        return new int[]{row, col};
     }
 
     public void validateAndMakeMove(int row, int col) {
@@ -91,7 +108,8 @@ public class GameService {
         
         boardService.makeMove(board, row, col, currentPlayer.getSymbol());
         
-        if (boardService.checkWin(board, currentPlayer.getSymbol())) {
+        // Use optimized win check
+        if (boardService.checkWin(board, currentPlayer.getSymbol(), row, col)) {
             board.setGameState(GameState.WIN);
             System.out.println("\n*** " + currentPlayer.getName() + " wins! ***");
         } else if (board.isBoardFull()) {
